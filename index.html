@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Fun Calculator!</title>
+  <style>
+    :root {
+      --yellow: #fff2ad;
+      --pink: #ffd5e5;
+      --blue: #d9f1ff;
+      --green: #d9f5d6;
+      --purple: #e7d8ff;
+      --ink: #493b5a;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+    body {
+      min-height: 100vh;
+      padding: 10px 18px 16px;
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
+    }
+    button, input { font: inherit; color: inherit; }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .title { margin: 0; color: #e15f9b; font-size: 22px; line-height: 1.35; }
+    .top-copy { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .tagline { margin: 0; padding: 2px 0; font-size: 12px; }
+    .layout-badge { color: #66809a; font-size: 10px; }
+    .body {
+      display: grid;
+      grid-template-columns: minmax(350px, 1fr) minmax(420px, 2fr);
+      min-height: calc(100vh - 74px);
+    }
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      background: #fff;
+    }
+    .left { border: 3px solid #f2a8c6; margin-right: 8px; }
+    .right { border: 3px solid #90cbea; margin-left: 8px; }
+    .section-title { margin: 7px 12px 5px; font-size: 15px; line-height: 1.4; }
+    .screen {
+      flex: 0 0 auto;
+      margin: 0 10px 8px;
+      padding: 6px 7px 5px;
+      border: 3px inset #c7dfec;
+      background: var(--blue);
+    }
+    .expression {
+      display: block;
+      width: 100%;
+      padding: 3px 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      text-align: right;
+      font-size: 19px;
+    }
+    .answer {
+      min-height: 22px;
+      padding: 4px 2px 0;
+      color: #3181ad;
+      text-align: right;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .keys {
+      display: grid;
+      flex: 1 1 auto;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-rows: repeat(6, minmax(36px, 1fr));
+      gap: 4px;
+      padding: 0 8px;
+    }
+    .key, .extra button, .draw-button, .find-button {
+      min-width: 0;
+      padding: 3px 4px;
+      border: 3px outset #e2e2e2;
+      border-radius: 2px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .key:active, .extra button:active, .draw-button:active, .find-button:active { border-style: inset; }
+    .key.blue { background: var(--blue); }
+    .key.green, .extra button { background: var(--green); }
+    .key.purple { background: var(--purple); }
+    .key.pink, .find-button, .draw-button { background: var(--pink); }
+    .extra {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+      margin: 4px 9px 9px;
+    }
+    .extra button { padding: 4px 3px; }
+    .extra .part-percent { background: var(--pink); }
+    .controls { display: flex; align-items: center; gap: 4px; margin: 0 10px 0; }
+    .y-label { padding: 0 4px; font-size: 12px; font-weight: bold; }
+    .graph-expression {
+      flex: 1 1 auto;
+      min-width: 40px;
+      padding: 4px;
+      border: 2px inset #bbb;
+      background: var(--blue);
+      font-size: 12px;
+    }
+    .draw-button { padding: 4px 8px; white-space: nowrap; }
+    .graph-status { min-height: 22px; margin: 4px 13px; color: #66809a; font-size: 9px; }
+    .plot-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 220px;
+      margin: 0 10px 10px;
+      border: 2px solid #90cbea;
+      background: #fbfdff;
+    }
+    #plot { display: block; width: 100%; height: 100%; }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgb(73 59 90 / 28%);
+    }
+    .modal-backdrop.open { display: flex; }
+    .percent-modal {
+      width: min(360px, 100%);
+      padding: 0 14px 12px;
+      border: 2px solid #e8c98d;
+      background: var(--yellow);
+      box-shadow: 0 8px 28px rgb(73 59 90 / 25%);
+    }
+    .percent-modal h2 { margin: 10px 0; color: var(--ink); text-align: center; font-size: 13px; }
+    .field-row { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 6px; margin: 5px 0; }
+    .field-row input { min-width: 0; padding: 4px 6px; border: 1px solid #aaa; background: #fff; }
+    .percent-result { min-height: 24px; margin: 7px 0; color: #d4558d; text-align: center; font-size: 12px; font-weight: bold; }
+    .find-button { width: 100%; padding: 5px; font-size: 11px; }
+    /* Portrait phones and tablets use a roomy, scrollable single-column layout. */
+    @media (max-width: 820px) and (orientation: portrait), (max-width: 640px) {
+      body { padding: 10px 12px 14px; }
+      .body { grid-template-columns: minmax(0, 1fr); gap: 12px; min-height: auto; }
+      .left, .right { margin: 0; }
+      .left { min-height: max(570px, 68svh); }
+      .right { min-height: max(470px, 62svh); }
+      .keys { grid-template-rows: repeat(6, minmax(46px, 1fr)); }
+      .key { font-size: 11px; }
+      .expression { font-size: 21px; }
+      .answer { font-size: 12px; }
+      .plot-wrap { min-height: max(340px, 48svh); }
+    }
+    /* Landscape tablets keep both tools visible, with more room for the graph. */
+    @media (min-width: 700px) and (max-width: 1100px) and (orientation: landscape) {
+      .body { grid-template-columns: minmax(310px, 0.95fr) minmax(340px, 1.25fr); min-height: calc(100svh - 74px); }
+      .left { min-height: 520px; }
+      .right { min-height: 520px; }
+      .keys { grid-template-rows: repeat(6, minmax(42px, 1fr)); }
+    }
+    /* A phone held sideways still gets large, easy-to-tap keys. */
+    @media (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
+      body { padding: 8px 12px; }
+      .body { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); min-height: calc(100svh - 54px); }
+      .left, .right { min-height: 420px; }
+      .keys { grid-template-rows: repeat(6, minmax(42px, 1fr)); }
+      .plot-wrap { min-height: 300px; }
+    }
+    @media (max-width: 420px) {
+      body { padding: 8px; }
+      .title { font-size: 19px; }
+      .tagline { font-size: 10px; }
+      .layout-badge { font-size: 9px; }
+      .left { min-height: max(570px, 70svh); }
+      .key { font-size: 12px; }
+      .keys { gap: 3px; padding: 0 6px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-copy">
+      <p class="tagline">Let's do some math!</p>
+      <span id="layout-badge" class="layout-badge" aria-live="polite">Adapting layout…</span>
+    </div>
+  </header>
+
+  <main class="body">
+    <section class="panel left" aria-label="Calculator">
+      <h2 class="section-title">Let's calculate!</h2>
+      <div class="screen">
+        <input id="expression" class="expression" aria-label="Math problem" autocomplete="off" spellcheck="false">
+        <div id="answer" class="answer" aria-live="polite">Type a math problem!</div>
+      </div>
+      <div id="keys" class="keys"></div>
+      <div id="extra" class="extra"></div>
+    </section>
+
+    <section class="panel right" aria-label="Graphing calculator">
+      <h2 class="section-title">Let's draw a graph!</h2>
+      <div class="controls">
+        <label class="y-label" for="graph-expression">y =</label>
+        <input id="graph-expression" class="graph-expression" value="sin(x)" autocomplete="off" spellcheck="false">
+        <button id="draw" class="draw-button" type="button">Draw!</button>
+      </div>
+      <div id="graph-status" class="graph-status">Try x**2 or sin(x)</div>
+      <div class="plot-wrap"><canvas id="plot" aria-label="Function graph"></canvas></div>
+    </section>
+  </main>
+
+  <div id="modal-backdrop" class="modal-backdrop" role="presentation">
+    <section class="percent-modal" role="dialog" aria-modal="true" aria-labelledby="percent-title">
+      <h2 id="percent-title">What percent is the part?</h2>
+      <label class="field-row"><span>Part:</span><input id="part" type="text" inputmode="decimal"></label>
+      <label class="field-row"><span>Whole:</span><input id="whole" type="text" inputmode="decimal"></label>
+      <div id="percent-result" class="percent-result" aria-live="polite"></div>
+      <button id="find-it" class="find-button" type="button">Find it!</button>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const colors = { yellow: "#fff2ad", pink: "#ffd5e5", blue: "#d9f1ff", green: "#d9f5d6", purple: "#e7d8ff", ink: "#493b5a" };
+      const keyRows = [
+        ["DEG", "(", ")", "Back", "Clear"],
+        ["sin", "cos", "tan", "sqrt", "x^2"],
+        ["7", "8", "9", "/", "log"],
+        ["4", "5", "6", "*", "ln"],
+        ["1", "2", "3", "-", "x^y"],
+        ["0", ".", "pi", "+", "="],
+      ];
+      const expression = document.getElementById("expression");
+      const answer = document.getElementById("answer");
+      const graphExpression = document.getElementById("graph-expression");
+      const graphStatus = document.getElementById("graph-status");
+      const canvas = document.getElementById("plot");
+      const context = canvas.getContext("2d");
+      const modal = document.getElementById("modal-backdrop");
+      let degrees = true;
+
+      function updateDeviceLayout() {
+        const narrow = window.matchMedia("(max-width: 640px)").matches;
+        const shortTouchLandscape = window.matchMedia("(max-height: 520px) and (orientation: landscape) and (pointer: coarse)").matches;
+        const tablet = window.matchMedia("(max-width: 1100px)").matches || window.matchMedia("(pointer: coarse)").matches;
+        const layout = narrow || shortTouchLandscape ? "Phone" : tablet ? "Tablet" : "PC";
+        document.documentElement.dataset.deviceLayout = layout.toLowerCase();
+        document.getElementById("layout-badge").textContent = layout + " layout";
+      }
+
+      function nice(number) {
+        if (Number.isNaN(number)) return "nan";
+        if (number === Infinity) return "inf";
+        if (number === -Infinity) return "-inf";
+        if (Object.is(number, -0)) number = 0;
+        const precise = number.toPrecision(10);
+        const match = precise.match(/^(-?)(\d)(?:\.(\d+))?(?:e([+-]?\d+))?$/i);
+        if (!match) return String(number);
+        const sign = match[1], digits = match[2] + (match[3] || "");
+        const exponent = Number(match[4] || 0);
+        const significant = digits.replace(/0+$/, "") || "0";
+        if (exponent < -4 || exponent >= 10) {
+          const fraction = significant.slice(1);
+          return sign + significant[0] + (fraction ? "." + fraction : "") + "e" + (exponent < 0 ? "-" : "+") + String(Math.abs(exponent)).padStart(2, "0");
+        }
+        const point = exponent + 1;
+        let decimal;
+        if (point <= 0) decimal = "0." + "0".repeat(-point) + significant;
+        else if (point >= significant.length) decimal = significant + "0".repeat(point - significant.length);
+        else decimal = significant.slice(0, point) + "." + significant.slice(point);
+        return sign + decimal;
+      }
+
+      function tokenize(text) {
+        const tokens = [];
+        let position = 0;
+        while (position < text.length) {
+          const rest = text.slice(position);
+          const space = rest.match(/^\s+/);
+          if (space) { position += space[0].length; continue; }
+          const number = rest.match(/^(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?/);
+          if (number) { tokens.push({ type: "number", value: Number(number[0]) }); position += number[0].length; continue; }
+          const name = rest.match(/^[A-Za-z_][A-Za-z_0-9]*/);
+          if (name) { tokens.push({ type: "name", value: name[0] }); position += name[0].length; continue; }
+          const operator = rest.match(/^(\*\*|[()+\-*/%,])/);
+          if (operator) { tokens.push({ type: "op", value: operator[0] }); position += operator[0].length; continue; }
+          throw new Error("I don't know that math yet!");
+        }
+        return tokens;
+      }
+
+      function doMath(text, xValue) {
+        const tokens = tokenize(text);
+        let index = 0;
+        const peek = () => tokens[index];
+        const take = () => tokens[index++];
+        const precedence = { "+": 10, "-": 10, "*": 20, "/": 20, "%": 20, "**": 30 };
+        function parseExpression(minimum = 0) {
+          let token = take();
+          if (!token) throw new Error("I don't know that math yet!");
+          let value;
+          if (token.type === "number") value = token.value;
+          else if (token.value === "+" || token.value === "-") {
+            value = parseExpression(29);
+            if (token.value === "-") value = -value;
+          } else if (token.value === "(") {
+            value = parseExpression(0);
+            if (!peek() || take().value !== ")") throw new Error("I don't know that math yet!");
+          } else if (token.type === "name") {
+            if (peek() && peek().value === "(") {
+              take();
+              const argument = parseExpression(0);
+              if (peek() && peek().value === ",") throw new Error("Put one number inside the math word.");
+              if (!peek() || take().value !== ")") throw new Error("I don't know that math yet!");
+              const angle = degrees ? argument * Math.PI / 180 : argument;
+              const functions = {
+                sqrt: () => Math.sqrt(argument), abs: () => Math.abs(argument),
+                log: () => Math.log10(argument), ln: () => Math.log(argument),
+                sin: () => Math.sin(angle), cos: () => Math.cos(angle), tan: () => Math.tan(angle),
+              };
+              if (!Object.prototype.hasOwnProperty.call(functions, token.value)) throw new Error("I don't know that math yet!");
+              value = functions[token.value]();
+            } else if (token.value === "pi") value = Math.PI;
+            else if (token.value === "e") value = Math.E;
+            else if (token.value === "x" && xValue !== undefined) value = xValue;
+            else throw new Error("Try x, pi, or e.");
+          } else throw new Error("I don't know that math yet!");
+
+          while (peek() && Object.prototype.hasOwnProperty.call(precedence, peek().value) && precedence[peek().value] >= minimum) {
+            const operator = take().value;
+            const rank = precedence[operator];
+            const right = parseExpression(operator === "**" ? rank : rank + 1);
+            if (operator === "+") value += right;
+            else if (operator === "-") value -= right;
+            else if (operator === "*") value *= right;
+            else if (operator === "/") value /= right;
+            else if (operator === "%") value %= right;
+            else {
+              if (Math.abs(right) > 100) throw new Error("That power is too big!");
+              value = value ** right;
+            }
+          }
+          return value;
+        }
+        const result = parseExpression();
+        if (index !== tokens.length || typeof result !== "number") throw new Error("Please use numbers.");
+        if (!Number.isFinite(result)) throw new Error("The answer is too big.");
+        return result;
+      }
+
+      function insertAtCursor(text) {
+        const start = expression.selectionStart ?? expression.value.length;
+        const end = expression.selectionEnd ?? expression.value.length;
+        expression.setRangeText(text, start, end, "end");
+        expression.focus();
+      }
+
+      function press(key) {
+        if (key === "DEG") {
+          degrees = !degrees;
+          document.querySelector('[data-key="DEG"]').textContent = degrees ? "DEG" : "RAD";
+          answer.textContent = "Angle mode changed!";
+          drawGraph();
+        } else if (key === "Clear") {
+          expression.value = "";
+          answer.textContent = "All clear!";
+        } else if (key === "Back") {
+          const start = expression.selectionStart ?? expression.value.length;
+          const end = expression.selectionEnd ?? expression.value.length;
+          if (start !== end) expression.setRangeText("", start, end, "end");
+          else if (start > 0) expression.setRangeText("", start - 1, start, "end");
+          expression.focus();
+        } else if (key === "=") {
+          try { answer.textContent = "Answer: " + nice(doMath(expression.value)); }
+          catch (_error) { answer.textContent = "Oops! Check the math."; }
+        } else if (key === "Part %") {
+          document.getElementById("part").value = "";
+          document.getElementById("whole").value = "";
+          document.getElementById("percent-result").textContent = "";
+          modal.classList.add("open");
+          document.getElementById("part").focus();
+        } else if (key === "x^2") {
+          expression.value = expression.value ? "(" + expression.value + ")**2" : "2**2";
+          expression.focus();
+        } else if (key === "sqrt" || ["sin", "cos", "tan", "log", "ln", "abs"].includes(key)) insertAtCursor(key + "(");
+        else if (key === "x^y") insertAtCursor("**");
+        else if (key === "pi") insertAtCursor("pi");
+        else if (key === "e") insertAtCursor("e");
+        else if (key === "%") expression.value = expression.value ? "(" + expression.value + ")/100" : "0.01";
+        else insertAtCursor(key);
+      }
+
+      const keys = document.getElementById("keys");
+      keyRows.flat().forEach((key) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "key " + ((["sin", "cos", "tan", "sqrt", "log", "ln"].includes(key)) ? "green" : "blue");
+        if (["DEG", "Back", "Clear", "/", "*", "-", "+", "x^y"].includes(key)) button.className = "key purple";
+        if (key === "=") button.className = "key pink";
+        button.textContent = key;
+        button.dataset.key = key;
+        button.addEventListener("click", () => press(key));
+        keys.appendChild(button);
+      });
+      ["e", "%", "abs", "Part %"].forEach((key) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = key;
+        if (key === "Part %") button.className = "part-percent";
+        button.addEventListener("click", () => press(key));
+        document.getElementById("extra").appendChild(button);
+      });
+
+      function parseFloatLikePython(text) {
+        const value = text.trim();
+        if (/^[+-]?(?:inf(?:inity)?)$/i.test(value)) return value[0] === "-" ? -Infinity : Infinity;
+        if (/^[+-]?nan$/i.test(value)) return NaN;
+        if (!/^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$/.test(value)) throw new Error("number");
+        return Number(value);
+      }
+      function findPercent() {
+        const result = document.getElementById("percent-result");
+        try {
+          const part = parseFloatLikePython(document.getElementById("part").value);
+          const whole = parseFloatLikePython(document.getElementById("whole").value);
+          if (whole === 0) throw new RangeError("zero");
+          result.textContent = "Answer: " + nice(part / whole * 100) + "%";
+        } catch (error) {
+          result.textContent = error instanceof RangeError ? "Whole cannot be zero!" : "Please type two numbers!";
+        }
+      }
+      document.getElementById("find-it").addEventListener("click", findPercent);
+      modal.addEventListener("click", (event) => { if (event.target === modal) modal.classList.remove("open"); });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          if (modal.classList.contains("open")) modal.classList.remove("open");
+          else press("Clear");
+        }
+      });
+      expression.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); press("="); } });
+      graphExpression.addEventListener("keydown", (event) => { if (event.key === "Enter") drawGraph(); });
+      document.getElementById("draw").addEventListener("click", drawGraph);
+
+      function drawGraph() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.max(340, rect.width);
+        const height = Math.max(240, rect.height);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        context.clearRect(0, 0, width, height);
+        const leftEdge = 45, topEdge = 12, bottomEdge = 27, rightEdge = 10;
+        const graphWidth = width - leftEdge - rightEdge;
+        const graphHeight = height - topEdge - bottomEdge;
+        const samples = [];
+        for (let i = 0; i <= 360; i++) {
+          const x = -360 + 720 * i / 360;
+          try {
+            const y = doMath(graphExpression.value, x);
+            samples.push([x, Math.abs(y) < 10000 ? y : null]);
+          } catch (_error) { samples.push([x, null]); }
+        }
+        const ys = samples.map((sample) => sample[1]).filter((y) => y !== null);
+        if (!ys.length) { graphStatus.textContent = "Oops! Try different math."; return; }
+        let low = Math.min(...ys), high = Math.max(...ys);
+        if (low === high) { low -= 1; high += 1; }
+        else { const pad = (high - low) * 0.12; low -= pad; high += pad; }
+        context.fillStyle = "#fbfdff";
+        context.strokeStyle = "#c7dfec";
+        context.lineWidth = 1;
+        context.fillRect(leftEdge, topEdge, graphWidth, graphHeight);
+        context.strokeRect(leftEdge, topEdge, graphWidth, graphHeight);
+        context.font = '8px "Comic Sans MS", "Comic Sans", cursive, sans-serif';
+        context.fillStyle = "#72859a";
+        context.strokeStyle = "#e1edf4";
+        for (let i = 0; i < 7; i++) {
+          const px = leftEdge + graphWidth * i / 6;
+          context.beginPath(); context.moveTo(px, topEdge); context.lineTo(px, height - bottomEdge); context.stroke();
+          context.textAlign = "center"; context.textBaseline = "middle";
+          context.fillText(String(-360 + 120 * i), px, height - bottomEdge + 12);
+        }
+        for (let i = 0; i < 6; i++) {
+          const py = topEdge + graphHeight * i / 5;
+          context.beginPath(); context.moveTo(leftEdge, py); context.lineTo(width - rightEdge, py); context.stroke();
+          const yLabel = high - (high - low) * i / 5;
+          context.textAlign = "right"; context.textBaseline = "middle";
+          context.fillText(nice(yLabel), leftEdge - 4, py);
+        }
+        context.strokeStyle = "#ed65a0"; context.lineWidth = 3; context.lineJoin = "round";
+        let previous = null;
+        for (const [x, y] of samples) {
+          if (y === null) { previous = null; continue; }
+          const px = leftEdge + (x + 360) / 720 * graphWidth;
+          const py = topEdge + (high - y) / (high - low) * graphHeight;
+          if (previous && Math.abs(y - previous.y) < (high - low) * 0.5) {
+            context.beginPath(); context.moveTo(previous.x, previous.py); context.lineTo(px, py); context.stroke();
+          }
+          previous = { x: px, py, y };
+        }
+        graphStatus.textContent = "Here is your graph! x goes from -360 to 360.";
+      }
+      new ResizeObserver(drawGraph).observe(canvas.parentElement);
+      window.addEventListener("resize", updateDeviceLayout);
+      window.addEventListener("orientationchange", updateDeviceLayout);
+      window.addEventListener("load", () => { updateDeviceLayout(); drawGraph(); });
+      updateDeviceLayout();
+      setTimeout(drawGraph, 150);
+    })();
+  </script>
+</body>
+</html>
